@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pierre · Feuille · Ciseaux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-shapes" aria-hidden="true"></div>
+
+  <main class="game">
+    <header class="header">
+      <h1>Pierre · Feuille · Ciseaux</h1>
+      <p class="tagline" id="tagline">Le seul but : gagner la manche.</p>
+    </header>
+
+    <section class="setup" id="setup">
+      <button type="button" class="btn-settings" id="btnSettings" aria-label="Paramètres" title="Paramètres">⚙</button>
+
+      <label class="field-label" for="playerName">Pseudo</label>
+      <input type="text" class="text-input" id="playerName" maxlength="24" placeholder="Votre nom" autocomplete="nickname">
+
+      <label class="field-label">Mode de jeu</label>
+      <div class="mode-grid" role="group" aria-label="Mode de jeu">
+        <button type="button" class="mode-btn active" data-mode="classic">
+          <span class="mode-name">Classique</span>
+          <span class="mode-desc">Score libre</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="speedrun">
+          <span class="mode-name">Speedrun</span>
+          <span class="mode-desc">Série sans défaite</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="online">
+          <span class="mode-name">En ligne</span>
+          <span class="mode-desc">Amis & classé</span>
+        </button>
+      </div>
+
+      <section class="online-panel hidden" id="onlinePanel">
+        <p class="online-rank-badge hidden" id="onlineRankBadge">Non classé · 0 pts</p>
+
+        <label class="field-label">Type de partie</label>
+        <div class="online-mode-grid">
+          <button type="button" class="online-mode-btn active" data-online-mode="casual">
+            <span class="mode-name">Casual</span>
+            <span class="mode-desc">Match privé, sans rang</span>
+          </button>
+          <button type="button" class="online-mode-btn" data-online-mode="ranked">
+            <span class="mode-name">Classé</span>
+            <span class="mode-desc">5 rangs, progression</span>
+          </button>
+        </div>
+
+        <div class="ranks-info">
+          <span class="field-label">Rangs classé</span>
+          <p class="ranks-list">Non classé → Incompétant → Compétant → Connaisseur → Socrate</p>
+        </div>
+
+        <div id="onlineLobby">
+          <button type="button" class="btn-start" id="btnCreateMatch">Créer une partie privée</button>
+          <p class="online-or">ou rejoindre avec un code</p>
+          <input type="text" class="text-input code-input" id="joinCodeInput" maxlength="6" placeholder="CODE" autocomplete="off">
+          <button type="button" class="btn-secondary" id="btnJoinMatch">Rejoindre</button>
+          <p class="online-status" id="onlineStatus"></p>
+        </div>
+
+        <div class="online-waiting hidden" id="onlineWaiting">
+          <p class="code-label">Code de la partie</p>
+          <p class="match-code" id="displayCode">------</p>
+          <button type="button" class="btn-secondary" id="btnCopyCode">Copier le code</button>
+        </div>
+
+        <button type="button" class="btn-back" id="btnLeaveOnline">Retour aux modes solo</button>
+      </section>
+
+      <div class="solo-options" id="soloOptions">
+      <label class="field-label" for="difficulty">Difficulté de l'IA</label>
+      <div class="difficulty-grid" role="group" aria-labelledby="difficulty">
+        <button type="button" class="diff-btn active" data-diff="easy">
+          <span class="diff-name">Facile</span>
+          <span class="diff-desc">Choix au hasard</span>
+        </button>
+        <button type="button" class="diff-btn" data-diff="medium">
+          <span class="diff-name">Moyen</span>
+          <span class="diff-desc">Anticipe un peu</span>
+        </button>
+        <button type="button" class="diff-btn" data-diff="hard">
+          <span class="diff-name">Difficile</span>
+          <span class="diff-desc">S'adapte à vous</span>
+        </button>
+      </div>
+      </div>
+
+      <button type="button" class="btn-start" id="btnStart">Jouer</button>
+      <button type="button" class="btn-secondary" id="btnLeaderboard">Voir le classement</button>
+
+      <section class="leaderboard-panel hidden" id="leaderboardPanel" aria-label="Classement">
+        <div class="leaderboard-header">
+          <h2>Classement speedrun</h2>
+          <button type="button" class="btn-icon" id="btnCloseLeaderboard" aria-label="Fermer">×</button>
+        </div>
+        <p class="leaderboard-hint" id="leaderboardHint"></p>
+        <div class="tab-row">
+          <button type="button" class="tab-btn active" data-tab="mine">Mes essais</button>
+          <button type="button" class="tab-btn" data-tab="global">Tous les joueurs</button>
+        </div>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Joueur</th>
+                <th>Série</th>
+                <th>Diff.</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+          <p class="empty-msg hidden" id="leaderboardEmpty">Aucun essai pour l'instant.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="arena hidden" id="arena">
+      <div class="scoreboard" id="scoreboardClassic">
+        <div class="score-block">
+          <span class="score-label">Vous</span>
+          <span class="score-value" id="scorePlayer">0</span>
+        </div>
+        <div class="score-divider">—</div>
+        <div class="score-block">
+          <span class="score-label">IA</span>
+          <span class="score-value" id="scoreAI">0</span>
+        </div>
+      </div>
+
+      <div class="scoreboard speedrun-board hidden" id="scoreboardSpeedrun">
+        <div class="score-block wide">
+          <span class="score-label">Série en cours</span>
+          <span class="score-value streak" id="streakValue">0</span>
+        </div>
+        <p class="speedrun-rule">Une défaite termine l'essai. Les égalités ne comptent pas.</p>
+      </div>
+
+      <p class="diff-badge" id="diffBadge">Facile · Classique</p>
+
+      <div class="battle">
+        <div class="fighter">
+          <span class="fighter-label">Vous</span>
+          <div class="choice-display" id="playerChoice">?</div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="fighter">
+          <span class="fighter-label">IA</span>
+          <div class="choice-display ai" id="aiChoice">?</div>
+        </div>
+      </div>
+
+      <p class="result" id="result" aria-live="polite">Choisissez votre coup !</p>
+
+      <div class="choices" id="choices">
+        <button type="button" class="choice-btn" data-choice="rock" title="Pierre">
+          <span class="emoji">✊</span>
+          <span>Pierre</span>
+        </button>
+        <button type="button" class="choice-btn" data-choice="paper" title="Feuille">
+          <span class="emoji">✋</span>
+          <span>Feuille</span>
+        </button>
+        <button type="button" class="choice-btn" data-choice="scissors" title="Ciseaux">
+          <span class="emoji">✌️</span>
+          <span>Ciseaux</span>
+        </button>
+      </div>
+
+      <button type="button" class="btn-back" id="btnBack">Retour au menu</button>
+    </section>
+
+    <section class="arena online-arena hidden" id="onlineArena">
+      <p class="diff-badge" id="onlineModeBadge">En ligne · Casual</p>
+
+      <div class="scoreboard">
+        <div class="score-block">
+          <span class="score-label" id="onlineYouName">Vous</span>
+          <span class="score-value" id="onlineScoreYou">0</span>
+        </div>
+        <div class="score-divider">—</div>
+        <div class="score-block">
+          <span class="score-label" id="onlineOppName">Adversaire</span>
+          <span class="score-value" id="onlineScoreOpp">0</span>
+        </div>
+      </div>
+
+      <div class="battle">
+        <div class="fighter">
+          <span class="fighter-label">Vous</span>
+          <div class="choice-display" id="onlinePlayerChoice">?</div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="fighter">
+          <span class="fighter-label">Adversaire</span>
+          <div class="choice-display ai" id="onlineOppChoice">?</div>
+        </div>
+      </div>
+
+      <p class="result" id="onlineResult">Choisissez votre coup !</p>
+
+      <div class="choices">
+        <button type="button" class="online-choice-btn choice-btn" data-choice="rock">
+          <span class="emoji">✊</span><span>Pierre</span>
+        </button>
+        <button type="button" class="online-choice-btn choice-btn" data-choice="paper">
+          <span class="emoji">✋</span><span>Feuille</span>
+        </button>
+        <button type="button" class="online-choice-btn choice-btn" data-choice="scissors">
+          <span class="emoji">✌️</span><span>Ciseaux</span>
+        </button>
+      </div>
+
+      <div class="online-match-end hidden" id="onlineMatchEnd">
+        <p id="onlineMatchEndMsg">Partie terminée</p>
+        <button type="button" class="btn-start" id="btnOnlineRematch">Nouvelle partie</button>
+      </div>
+
+      <button type="button" class="btn-back" id="btnLeaveMatch">Quitter la partie</button>
+    </section>
+  </main>
+
+  <dialog class="settings-dialog" id="settingsDialog">
+    <div class="settings-header">
+      <h2>Paramètres</h2>
+      <button type="button" class="btn-icon" id="btnCloseSettings" aria-label="Fermer">×</button>
+    </div>
+    <div class="settings-body">
+      <label class="slider-row" for="musicVolume">
+        <span class="slider-label">Volume ambiances</span>
+        <span class="slider-value" id="musicValue">70%</span>
+      </label>
+      <input type="range" class="volume-slider" id="musicVolume" min="0" max="100" value="70">
+
+      <label class="slider-row" for="sfxVolume">
+        <span class="slider-label">Volume des sons</span>
+        <span class="slider-value" id="sfxValue">65%</span>
+      </label>
+      <input type="range" class="volume-slider" id="sfxVolume" min="0" max="100" value="65">
+
+      <label class="slider-row" for="efbVolume">
+        <span class="slider-label">EFB</span>
+        <span class="slider-value" id="efbValue">0%</span>
+      </label>
+      <input type="range" class="volume-slider" id="efbVolume" min="0" max="100" value="0">
+    </div>
+  </dialog>
+
+  <dialog class="gameover-dialog" id="gameOverDialog">
+    <h2>Essai terminé</h2>
+    <p class="gameover-streak">Série : <strong id="finalStreak">0</strong> victoires d'affilée</p>
+    <p class="gameover-sync hidden" id="syncNotice">Enregistré localement. Lancez le serveur pour partager le score.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-start" id="btnRetry">Rejouer</button>
+      <button type="button" class="btn-secondary" id="btnViewRank">Voir le classement</button>
+    </div>
+  </dialog>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="leaderboard.js"></script>
+  <script src="settings.js"></script>
+  <script src="ambient.js"></script>
+  <script src="sounds.js"></script>
+  <script src="explosion.js"></script>
+  <script src="online.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
