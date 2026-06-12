@@ -38,18 +38,6 @@ Placez dans le dossier `sounds/` :
 Listez les fichiers dans `sounds/ambient/tracks.json`, ou lancez `npm start` pour une détection automatique.
 
 Le menu **⚙ Paramètres** règle le volume des ambiances, des effets sonores et EFB. Les réglages sont sauvegardés dans le navigateur.
-
-## Lancer le jeu
-
-```bash
-npm install
-npm start
-```
-
-Puis ouvrez **http://localhost:3000**.
-
-Sans serveur (`index.html` en double-clic), le jeu fonctionne mais le classement global n'est pas partagé entre machines — seul l'onglet local « Mes essais » et les scores enregistrés sur le même PC sont disponibles.
-
 ## Difficultés IA
 
 | Niveau | Comportement |
