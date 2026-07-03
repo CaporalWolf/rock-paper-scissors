@@ -10,6 +10,9 @@ const Online = (() => {
   let matchCode = null;
   let mySlot = null;
   let roundLocked = false;
+  let isCompetitionMatch = false;
+  let competitionTitle = null;
+  let winTarget = 3;
 
   const onlinePanel = document.getElementById("onlinePanel");
   const onlineLobby = document.getElementById("onlineLobby");
@@ -37,14 +40,30 @@ const Online = (() => {
   const onlineMatchEndMsg = document.getElementById("onlineMatchEndMsg");
 
   function getPlayerId() {
+    if (typeof Auth !== "undefined" && Auth.isLoggedIn()) {
+      return Auth.getPlayerId();
+    }
     return Leaderboard.getPlayerId();
   }
 
   function getPlayerName() {
+    if (typeof Auth !== "undefined" && Auth.isLoggedIn()) {
+      return Auth.getUsername();
+    }
     const input = document.getElementById("playerName");
     const name = input?.value.trim();
     if (name) Leaderboard.setPlayerName(name);
     return Leaderboard.getPlayerName() || name || "Joueur";
+  }
+
+  function setCompetitionMatch(state) {
+    if (!state) return;
+    isCompetitionMatch = state.mode === "competition";
+    competitionTitle = state.competitionTitle;
+    winTarget = state.winTarget || 3;
+    matchCode = state.code;
+    mySlot = findMySlot(state);
+    renderState(state);
   }
 
   function ensureSocket() {
@@ -52,6 +71,11 @@ const Online = (() => {
     socket = io({ transports: ["websocket", "polling"] });
     socket.on("match-state", renderState);
     socket.on("match-started", (state) => {
+      if (state.mode === "competition") {
+        isCompetitionMatch = true;
+        competitionTitle = state.competitionTitle;
+        winTarget = state.winTarget || 3;
+      }
       renderState(state);
       showArena();
     });
@@ -91,6 +115,9 @@ const Online = (() => {
     matchCode = null;
     mySlot = null;
     roundLocked = false;
+    isCompetitionMatch = false;
+    competitionTitle = null;
+    winTarget = 3;
   }
 
   function showWaiting(code) {
@@ -182,10 +209,31 @@ const Online = (() => {
 
   function leaveMatch() {
     if (socket?.connected) socket.emit("leave-match");
+    const wasCompetition = isCompetitionMatch || gameModeCompetition();
     matchCode = null;
     mySlot = null;
-    showLobby();
+    isCompetitionMatch = false;
+    competitionTitle = null;
+    winTarget = 3;
+    if (wasCompetition) {
+      showLobbyCompetition();
+    } else {
+      showLobby();
+    }
     setStatus("");
+  }
+
+  function gameModeCompetition() {
+    return document.querySelector('.mode-btn[data-mode="competition"]')?.classList.contains("active");
+  }
+
+  function showLobbyCompetition() {
+    setupEl?.classList.remove("hidden");
+    onlineArenaEl?.classList.add("hidden");
+    if (typeof Competition !== "undefined") {
+      Competition.showPanel(true);
+      Competition.reset?.();
+    }
   }
 
   function renderState(state) {
@@ -225,8 +273,15 @@ const Online = (() => {
         onlineOppChoice.textContent = "?";
         onlineResult.textContent = "Choisissez votre coup !";
       }
-      const modeLabel = state.mode === "ranked" ? "Classé" : "Casual";
-      setStatus(`${modeLabel} · Premier à 3 manches`);
+      const target = state.winTarget || winTarget || 3;
+      if (state.mode === "competition") {
+        setStatus(`${state.competitionTitle || "Compétition"} · Premier à ${target} manches`);
+        const badge = document.getElementById("onlineModeBadge");
+        if (badge) badge.textContent = `Compétition · ${state.competitionTitle || ""}`;
+      } else {
+        const modeLabel = state.mode === "ranked" ? "Classé" : "Casual";
+        setStatus(`${modeLabel} · Premier à ${target} manches`);
+      }
     }
   }
 
@@ -289,6 +344,10 @@ const Online = (() => {
       const delta = me.delta > 0 ? `+${me.delta}` : String(me.delta);
       msg += ` ${me.rankName} (${me.rating} pts, ${delta})`;
       loadRankProfile();
+    } else if (state.mode === "competition") {
+      msg = won
+        ? `Victoire en ${state.competitionTitle || "compétition"} !`
+        : `Défaite en ${state.competitionTitle || "compétition"}.`;
     }
 
     onlineMatchEndMsg.textContent = msg;
@@ -341,7 +400,13 @@ const Online = (() => {
       leaveMatch();
       if (typeof window.setMainMode === "function") window.setMainMode("classic");
     });
-    btnLeaveMatch?.addEventListener("click", leaveMatch);
+    btnLeaveMatch?.addEventListener("click", () => {
+      const wasCompetition = isCompetitionMatch;
+      leaveMatch();
+      if (wasCompetition && typeof window.setMainMode === "function") {
+        window.setMainMode("competition");
+      }
+    });
 
     document.getElementById("btnOnlineRematch")?.addEventListener("click", () => {
       leaveMatch();
@@ -362,5 +427,8 @@ const Online = (() => {
     showLobby,
     loadRankProfile,
     leaveMatch,
+    ensureSocket,
+    emitAck,
+    setCompetitionMatch,
   };
 })();

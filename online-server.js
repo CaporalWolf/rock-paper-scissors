@@ -8,13 +8,8 @@ const WIN_TARGET = 3;
 const WIN_RATING = 35;
 const LOSS_RATING = 25;
 
-const RANKS = [
-  { id: "unranked", name: "Non classé", min: 0 },
-  { id: "incompetent", name: "Incompétant", min: 100 },
-  { id: "competent", name: "Compétant", min: 250 },
-  { id: "connoisseur", name: "Connaisseur", min: 500 },
-  { id: "socrates", name: "Socrate", min: 800 },
-];
+const { RANKS, getRankFromRating, meetsRankRequirement } = require("./ranks");
+const { getCompetitionById } = require("./competition-server");
 
 const BEATS = { rock: "scissors", paper: "rock", scissors: "paper" };
 
@@ -32,14 +27,6 @@ function readRankings() {
 
 function writeRankings(data) {
   fs.writeFileSync(RANKINGS_FILE, JSON.stringify(data, null, 2), "utf8");
-}
-
-function getRankFromRating(rating) {
-  let current = RANKS[0];
-  for (const rank of RANKS) {
-    if (rating >= rank.min) current = rank;
-  }
-  return current;
 }
 
 function getPlayerRankedProfile(playerId) {
@@ -105,6 +92,9 @@ function publicMatchState(match) {
     code: match.code,
     mode: match.mode,
     status: match.status,
+    competitionId: match.competitionId || null,
+    competitionTitle: match.competitionTitle || null,
+    winTarget: match.winTarget,
     players: match.players.map((p, i) => publicPlayer(p, i)),
     scores: [...match.scores],
     round: {
@@ -164,9 +154,11 @@ function resolveRound(io, match) {
     return;
   }
 
-  if (match.scores[0] >= WIN_TARGET || match.scores[1] >= WIN_TARGET) {
+  const target = match.winTarget || WIN_TARGET;
+
+  if (match.scores[0] >= target || match.scores[1] >= target) {
     match.status = "finished";
-    match.matchWinnerIndex = match.scores[0] >= WIN_TARGET ? 0 : 1;
+    match.matchWinnerIndex = match.scores[0] >= target ? 0 : 1;
     match.round.phase = "done";
 
     let rankUpdate = null;
@@ -246,6 +238,9 @@ function setupOnline(io) {
         mode,
         status: "waiting",
         scores: [0, 0],
+        winTarget: WIN_TARGET,
+        competitionId: null,
+        competitionTitle: null,
         matchWinnerIndex: null,
         lastRound: null,
         round: { phase: "choosing" },
@@ -266,6 +261,96 @@ function setupOnline(io) {
       socket.join(code);
       cb({ ok: true, state: publicMatchState(match) });
       broadcastMatch(io, match);
+    });
+
+    socket.on("create-competition-match", ({ competitionId, playerId, playerName }, cb) => {
+      if (typeof cb !== "function") return;
+      if (!playerId) return cb({ error: "playerId requis" });
+      if (!competitionId) return cb({ error: "Compétition requise" });
+
+      const competition = getCompetitionById(competitionId);
+      if (!competition) return cb({ error: "Compétition introuvable" });
+      if (competition.status !== "active") {
+        return cb({ error: "Cette compétition n'est pas active" });
+      }
+
+      const profile = getPlayerRankedProfile(playerId);
+      if (!meetsRankRequirement(profile.rankId, competition.requiredRankId)) {
+        return cb({
+          error: `Rang requis : ${competition.requiredRankName} (vous : ${profile.rankName})`,
+        });
+      }
+
+      const code = generateCode();
+      const match = {
+        code,
+        mode: "competition",
+        status: "waiting",
+        scores: [0, 0],
+        winTarget: competition.roundsToWin,
+        competitionId: competition.id,
+        competitionTitle: competition.title,
+        matchWinnerIndex: null,
+        lastRound: null,
+        round: { phase: "choosing" },
+        consecutiveDraws: 0,
+        players: [
+          {
+            playerId: String(playerId).slice(0, 64),
+            name: sanitizeName(playerName),
+            socketId: socket.id,
+            modeContext: "competition",
+            choice: null,
+          },
+        ],
+        createdAt: Date.now(),
+      };
+
+      matches.set(code, match);
+      socket.join(code);
+      cb({ ok: true, state: publicMatchState(match) });
+      broadcastMatch(io, match);
+    });
+
+    socket.on("join-competition-match", ({ code, competitionId, playerId, playerName }, cb) => {
+      if (typeof cb !== "function") return;
+      const match = matches.get(String(code || "").toUpperCase());
+      if (!match) return cb({ error: "Code introuvable" });
+      if (match.mode !== "competition") return cb({ error: "Ce n'est pas une partie de compétition" });
+      if (competitionId && match.competitionId !== competitionId) {
+        return cb({ error: "Code ne correspond pas à cette compétition" });
+      }
+      if (match.status === "finished") return cb({ error: "Partie terminée" });
+      if (match.players.length >= 2) return cb({ error: "Partie complète" });
+      if (match.players.some((p) => p.playerId === playerId)) {
+        return cb({ error: "Déjà dans cette partie" });
+      }
+
+      const competition = getCompetitionById(match.competitionId);
+      if (!competition || competition.status !== "active") {
+        return cb({ error: "Compétition inactive" });
+      }
+
+      const profile = getPlayerRankedProfile(playerId);
+      if (!meetsRankRequirement(profile.rankId, competition.requiredRankId)) {
+        return cb({
+          error: `Rang requis : ${competition.requiredRankName} (vous : ${profile.rankName})`,
+        });
+      }
+
+      match.players.push({
+        playerId: String(playerId).slice(0, 64),
+        name: sanitizeName(playerName),
+        socketId: socket.id,
+        modeContext: "competition",
+        choice: null,
+      });
+
+      match.status = "playing";
+      socket.join(match.code);
+      cb({ ok: true, state: publicMatchState(match) });
+      broadcastMatch(io, match);
+      io.to(match.code).emit("match-started", publicMatchState(match));
     });
 
     socket.on("join-match", ({ code, playerId, playerName }, cb) => {
@@ -359,4 +444,4 @@ function setupOnline(io) {
   }, 60_000);
 }
 
-module.exports = { setupOnline, RANKS, getRankFromRating };
+module.exports = { setupOnline, RANKS, getRankFromRating, getPlayerRankedProfile };

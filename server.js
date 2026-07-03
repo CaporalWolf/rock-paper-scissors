@@ -5,6 +5,8 @@ const http = require("http");
 const crypto = require("crypto");
 const { Server } = require("socket.io");
 const { setupOnline } = require("./online-server");
+const { setupAuth, requireAuth } = require("./auth-server");
+const { setupCompetitions } = require("./competition-server");
 
 const app = express();
 const server = http.createServer(app);
@@ -86,6 +88,8 @@ app.post("/api/runs", (req, res) => {
   res.status(201).json(run);
 });
 
+setupAuth(app);
+setupCompetitions(app, requireAuth);
 setupOnline(io);
 
 server.listen(PORT, () => {

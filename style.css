@@ -50,7 +50,7 @@ body {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 560px;
+  max-width: 620px;
 }
 
 .header {
@@ -165,7 +165,7 @@ body {
 
 .mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
@@ -902,6 +902,286 @@ body.screen-shake {
 @keyframes explosion-text-pop {
   0% { transform: scale(0) rotate(-10deg); opacity: 0; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+}
+
+.auth-dialog {
+  border: none;
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  max-width: 400px;
+  width: calc(100% - 2rem);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  z-index: 101;
+}
+
+.auth-dialog::backdrop {
+  background: transparent;
+}
+
+.auth-dialog h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.auth-intro {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.auth-tab-row {
+  margin-bottom: 1rem;
+}
+
+.auth-error {
+  color: var(--lose);
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.account-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--bg);
+  border: 1px solid rgba(124, 108, 255, 0.25);
+  border-radius: 12px;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.account-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.account-username {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.admin-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--draw);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.account-rank {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.btn-logout {
+  padding: 0.4rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--lose);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.competition-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.competition-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.competition-intro {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.comp-tab-row {
+  margin-bottom: 0.75rem;
+}
+
+.comp-filter-row {
+  margin-bottom: 0.75rem;
+}
+
+.comp-select {
+  margin-bottom: 0;
+}
+
+.competition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+}
+
+.competition-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg);
+}
+
+.competition-banner {
+  position: relative;
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.5rem 0.75rem;
+}
+
+.competition-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+.competition-badge.official {
+  background: rgba(251, 191, 36, 0.85);
+  color: #1a1a24;
+}
+
+.competition-status {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.competition-status.active {
+  background: rgba(74, 222, 128, 0.85);
+  color: #0f0f14;
+}
+
+.competition-status.ended {
+  background: rgba(139, 139, 158, 0.6);
+}
+
+.competition-body {
+  padding: 0.85rem;
+}
+
+.competition-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.competition-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.65rem;
+  line-height: 1.35;
+}
+
+.competition-meta {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.comp-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.comp-meta-label {
+  color: var(--muted);
+}
+
+.comp-meta-value {
+  font-weight: 600;
+}
+
+.rank-tag {
+  color: var(--accent);
+}
+
+.comp-join-btn {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.comp-join-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.competition-lobby {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.competition-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.checkbox-row input {
+  accent-color: var(--accent);
 }
 
 @media (max-width: 400px) {

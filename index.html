@@ -21,8 +21,18 @@
     <section class="setup" id="setup">
       <button type="button" class="btn-settings" id="btnSettings" aria-label="Paramètres" title="Paramètres">⚙</button>
 
+      <div class="account-bar hidden" id="accountBar">
+        <div class="account-info">
+          <span class="account-label">Connecté</span>
+          <span class="account-username" id="accountUsername"></span>
+          <span class="admin-badge hidden" id="adminBadge">Admin</span>
+        </div>
+        <div class="account-rank" id="accountRank"></div>
+        <button type="button" class="btn-logout" id="btnLogout">Déconnexion</button>
+      </div>
+
       <label class="field-label" for="playerName">Pseudo</label>
-      <input type="text" class="text-input" id="playerName" maxlength="24" placeholder="Votre nom" autocomplete="nickname">
+      <input type="text" class="text-input" id="playerName" maxlength="24" placeholder="Votre nom" autocomplete="nickname" readonly>
 
       <label class="field-label">Mode de jeu</label>
       <div class="mode-grid" role="group" aria-label="Mode de jeu">
@@ -37,6 +47,10 @@
         <button type="button" class="mode-btn" data-mode="online">
           <span class="mode-name">En ligne</span>
           <span class="mode-desc">Amis & classé</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="competition">
+          <span class="mode-name">Compétition</span>
+          <span class="mode-desc">Tournois & rangs</span>
         </button>
       </div>
 
@@ -75,6 +89,82 @@
         </div>
 
         <button type="button" class="btn-back" id="btnLeaveOnline">Retour aux modes solo</button>
+      </section>
+
+      <section class="competition-panel hidden" id="competitionPanel">
+        <div class="competition-header">
+          <h2>Compétitions</h2>
+          <p class="competition-intro">Affrontez d'autres joueurs dans des tournois classés par rang.</p>
+        </div>
+
+        <div class="tab-row comp-tab-row">
+          <button type="button" class="tab-btn comp-tab-btn active" data-comp-tab="list">Tournois</button>
+          <button type="button" class="tab-btn comp-tab-btn" data-comp-tab="create">Créer</button>
+        </div>
+
+        <div id="compListSection">
+          <div class="comp-filter-row">
+            <label class="field-label" for="compOfficialFilter">Filtrer</label>
+            <select class="text-input comp-select" id="compOfficialFilter">
+              <option value="all">Toutes</option>
+              <option value="official">Officielles</option>
+              <option value="community">Communauté</option>
+            </select>
+          </div>
+
+          <div class="competition-list" id="competitionList"></div>
+          <p class="empty-msg hidden" id="competitionEmpty">Aucune compétition disponible.</p>
+
+          <div id="competitionLobby" class="competition-lobby">
+            <p class="online-or">Rejoindre une partie avec un code</p>
+            <input type="text" class="text-input code-input" id="competitionJoinCode" maxlength="6" placeholder="CODE" autocomplete="off">
+            <button type="button" class="btn-secondary" id="btnCompetitionJoin">Rejoindre la partie</button>
+          </div>
+
+          <div class="online-waiting hidden" id="competitionWaiting">
+            <p class="code-label">Code de la partie</p>
+            <p class="match-code" id="competitionMatchCode">------</p>
+            <button type="button" class="btn-secondary" id="btnCompetitionCopy">Copier le code</button>
+            <button type="button" class="btn-back" id="btnCompetitionBack">Annuler</button>
+          </div>
+
+          <p class="online-status" id="competitionStatus"></p>
+        </div>
+
+        <div id="compCreateSection" class="hidden">
+          <form class="competition-form" id="competitionForm">
+            <label class="field-label" for="compTitle">Titre</label>
+            <input type="text" class="text-input" id="compTitle" maxlength="60" required placeholder="Nom du tournoi">
+
+            <label class="field-label" for="compDescription">Description</label>
+            <input type="text" class="text-input" id="compDescription" maxlength="200" placeholder="Courte description">
+
+            <label class="field-label" for="compRequiredRank">Rang minimum requis</label>
+            <select class="text-input comp-select" id="compRequiredRank" required></select>
+
+            <label class="field-label" for="compRounds">Manches pour gagner</label>
+            <input type="number" class="text-input" id="compRounds" min="1" max="15" value="3" required>
+
+            <label class="field-label" for="compStartDate">Date et heure de début</label>
+            <input type="datetime-local" class="text-input" id="compStartDate" required>
+
+            <label class="field-label" for="compEndDate">Date et heure de fin</label>
+            <input type="datetime-local" class="text-input" id="compEndDate" required>
+
+            <label class="field-label" for="compBannerTheme">Bannière</label>
+            <select class="text-input comp-select" id="compBannerTheme" required></select>
+
+            <label class="checkbox-row hidden" id="compOfficialRow">
+              <input type="checkbox" id="compIsOfficial">
+              <span>Compétition officielle (admin)</span>
+            </label>
+
+            <button type="submit" class="btn-start" id="btnSubmitCompetition">Publier la compétition</button>
+          </form>
+        </div>
+
+        <button type="button" class="btn-secondary hidden" id="btnCreateCompetition">Créer une compétition</button>
+        <button type="button" class="btn-back" id="btnLeaveCompetition">Retour aux modes solo</button>
       </section>
 
       <div class="solo-options" id="soloOptions">
@@ -257,6 +347,22 @@
     </div>
   </dialog>
 
+  <div class="auth-overlay hidden" id="authOverlay" aria-hidden="true"></div>
+  <dialog class="auth-dialog" id="authDialog">
+    <h2>Bienvenue</h2>
+    <p class="auth-intro">Créez un compte pour jouer. Identifiant et mot de passe requis.</p>
+    <div class="tab-row auth-tab-row">
+      <button type="button" class="tab-btn auth-tab-btn active" data-auth-tab="register">Créer un compte</button>
+      <button type="button" class="tab-btn auth-tab-btn" data-auth-tab="login">Connexion</button>
+    </div>
+    <label class="field-label" for="authUsername">Identifiant</label>
+    <input type="text" class="text-input" id="authUsername" maxlength="24" autocomplete="username" placeholder="votre_identifiant">
+    <label class="field-label" for="authPassword">Mot de passe</label>
+    <input type="password" class="text-input" id="authPassword" autocomplete="current-password" placeholder="••••••">
+    <p class="auth-error hidden" id="authError"></p>
+    <button type="button" class="btn-start" id="btnAuthSubmit">Créer mon compte</button>
+  </dialog>
+
   <dialog class="gameover-dialog" id="gameOverDialog">
     <h2>Essai terminé</h2>
     <p class="gameover-streak">Série : <strong id="finalStreak">0</strong> victoires d'affilée</p>
@@ -269,11 +375,13 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="leaderboard.js"></script>
+  <script src="auth.js"></script>
   <script src="settings.js"></script>
   <script src="ambient.js"></script>
   <script src="sounds.js"></script>
   <script src="explosion.js"></script>
   <script src="online.js"></script>
+  <script src="competition.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

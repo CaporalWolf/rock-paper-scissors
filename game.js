@@ -134,6 +134,9 @@ function getWinner(player, ai) {
 }
 
 function getPlayerName() {
+  if (typeof Auth !== "undefined" && Auth.isLoggedIn()) {
+    return Auth.getUsername();
+  }
   const fromInput = playerNameInput.value.trim();
   if (fromInput) Leaderboard.setPlayerName(fromInput);
   return Leaderboard.getPlayerName() || fromInput;
@@ -147,22 +150,29 @@ function updateBadge() {
 function updateArenaLayout() {
   const isSpeedrun = gameMode === "speedrun";
   const isOnline = gameMode === "online";
+  const isCompetition = gameMode === "competition";
   scoreboardClassic.classList.toggle("hidden", isSpeedrun);
   scoreboardSpeedrun.classList.toggle("hidden", !isSpeedrun);
-  taglineEl.textContent = isOnline
-    ? "Affrontez un ami avec un code privé."
-    : gameMode === "speedrun"
-      ? "Enchaînez les victoires — une défaite et c'est fini."
-      : "Le seul but : gagner la manche.";
+  taglineEl.textContent = isCompetition
+    ? "Rejoignez un tournoi selon votre rang."
+    : isOnline
+      ? "Affrontez un ami avec un code privé."
+      : gameMode === "speedrun"
+        ? "Enchaînez les victoires — une défaite et c'est fini."
+        : "Le seul but : gagner la manche.";
 }
 
 function updateModeUI() {
   const isOnline = gameMode === "online";
-  document.getElementById("soloOptions")?.classList.toggle("hidden", isOnline);
-  document.getElementById("btnStart")?.classList.toggle("hidden", isOnline);
-  document.getElementById("btnLeaderboard")?.classList.toggle("hidden", isOnline);
+  const isCompetition = gameMode === "competition";
+  const hideSolo = isOnline || isCompetition;
+  document.getElementById("soloOptions")?.classList.toggle("hidden", hideSolo);
+  document.getElementById("btnStart")?.classList.toggle("hidden", hideSolo);
+  document.getElementById("btnLeaderboard")?.classList.toggle("hidden", hideSolo);
   Online.showPanel(isOnline);
+  Competition.showPanel(isCompetition);
   if (isOnline) Online.loadRankProfile();
+  if (isCompetition && Auth.isLoggedIn()) Auth.loadRankProfile();
 }
 
 window.setMainMode = (mode) => {
@@ -432,6 +442,10 @@ function playRound(playerMove) {
 }
 
 function validateBeforeStart() {
+  if (typeof Auth !== "undefined" && !Auth.isLoggedIn()) {
+    Auth.showLogin();
+    return false;
+  }
   const name = getPlayerName();
   if (!name) {
     playerNameInput.focus();
@@ -490,7 +504,8 @@ modeButtons.forEach((btn) => {
     gameMode = btn.dataset.mode;
     updateArenaLayout();
     updateModeUI();
-    if (gameMode !== "online") Online.leaveMatch();
+    if (gameMode !== "online" && gameMode !== "competition") Online.leaveMatch();
+    if (gameMode !== "competition") Competition.reset?.();
   });
 });
 
@@ -514,7 +529,7 @@ choiceButtons.forEach((btn) => {
 });
 
 btnStart.addEventListener("click", () => {
-  if (gameMode === "online") return;
+  if (gameMode === "online" || gameMode === "competition") return;
   Ambient.unlock();
   startGame();
 });
@@ -532,9 +547,17 @@ btnViewRank.addEventListener("click", () => {
 });
 
 initPlayer();
+Auth.init();
 Settings.initUI();
 Online.init();
+Competition.init();
 Ambient.init();
 updateArenaLayout();
 updateModeUI();
 checkServer();
+
+document.getElementById("btnLeaveCompetition")?.addEventListener("click", () => {
+  Competition.reset?.();
+  Online.leaveMatch();
+  window.setMainMode("classic");
+});

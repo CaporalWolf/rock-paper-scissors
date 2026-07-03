@@ -22,6 +22,10 @@ const Leaderboard = (() => {
     return trimmed;
   }
 
+  function setPlayerId(id) {
+    if (id) localStorage.setItem(PLAYER_ID_KEY, id);
+  }
+
   function getLocalRuns() {
     try {
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -77,6 +81,7 @@ const Leaderboard = (() => {
     getPlayerId,
     getPlayerName,
     setPlayerName,
+    setPlayerId,
     getLocalRuns,
     getMyRuns,
     saveLocalRun,
